@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Consensus Monitor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body id="body">
+    <div id="height-version-container">
+        <div id="version-container" class="monitored-field">
+            Version<div id="version-field">-</div>
+        </div>
+
+        <div id="block-height-container" class="monitored-field">
+            Height<div id="block-height">-</div>
+        </div>
+    </div>
+
+    <div id="vote-area">
+        <div id="prevotes-container">
+            <div class="vote-header">Prevotes</div>
+
+            <div class="vote-tally">
+                <div id="prevotes-ratio" class="vote-percentage monitored-field">
+                    -</div>
+
+                <div id="prevotes-voting-power" class="voting-power monitored-field">
+                    -</div>
+            </div>
+
+            <div id="prevotes-validators" class="validator-list">
+            </div>
+        </div>
+
+        <div id="precommits-container">
+            <div class="vote-header">Precommits</div>
+            <div class="vote-tally">
+                <div id="precommits-ratio" class="vote-percentage monitored-field">
+                    -</div>
+
+                <div id="precommits-voting-power" class="voting-power monitored-field">
+                    -</div>
+            </div>
+            <div id="precommits-validators" class="validator-list">
+            </div>
+        </div>
+    </div>
+</body>
+<script src="js/consensus.js"></script>
+
+</html>
