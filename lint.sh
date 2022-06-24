@@ -14,7 +14,7 @@ fi
 if [ $CI ]
 then
     echo "Linting python"
-    python -m pylint ./*.py --disable=W0511,E0401,R0801,E1101
+    python -m pylint server/*.py --disable=W0511,E0401,R0801,E1101
     if [ $? -ne 0 ]
     then
     	pylint=1
