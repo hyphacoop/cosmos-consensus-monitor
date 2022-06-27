@@ -2,61 +2,83 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
+#height-version-container {
+    width: 20%;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: auto;
+}
+
+#version-container {
+    text-align: center;
+}
+
+
+#version-label, #height-label {
+    font-size: x-small;
+    text-align: left;
+    margin-left: 2px;   
+}
+
+#version-field, #block-height {
+    font-size: x-large;
+}
+
 .monitored-field {
     border: 2px solid black;
     border-radius: 4px;
 }
 
-#height-version-container {
-    display: flex;
-    gap: 1rem;
-}
-
-#version-container {
-    width: 6rem;
-    text-align: center;
-}
 
 #block-height-container {
-    width: 8rem;
     text-align: center;
 }
 
 #vote-area {
-    display: flex;
-    gap: 1rem;
+    display: grid;
+    gap: 4px;
     margin-top: 1rem;
+    grid-template-columns: repeat(1, 1fr);
+    margin-right: 8px;
 }
 
 #prevotes-container, #precommits-container {
-    width: 50%;
+    width: 100%;
+    border: 1px solid gray;
+    border-radius: 4px;
+    padding: 4px;
 }
 
 .vote-header {
-    margin: 1rem;
+    font-size: x-small;
+    margin-left: 2px;
+    margin-bottom: 1rem;
 }
 
 .vote-tally {
     display: flex;
+    width: 100%;
+    margin: auto;
+    font-size: large;
+    gap: 4px;
 }
 
 .vote-percentage {
-    width: 5rem;
     text-align: center;
-    line-height: 2rem;
+    min-width: 6rem;
+    padding: 4px;
 }
 
 .voting-power {
-    margin-left: 2rem;
-    width: 15rem;
+    width: 100%;
     text-align: center;
-    line-height: 2rem;
+    padding: 4px;
 }
 
 .validator-list {
     margin-top: 1rem;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     gap: 4px;
     align-items: center;
 }
@@ -66,4 +88,11 @@
     text-align: center;
     overflow: hidden;
     white-space: nowrap;
+    background-color: rgb(236, 236, 236);
+    border-radius: 4px;
+    font-size: small;
+}
+
+.voted {
+    background-color: lightgreen;
 }

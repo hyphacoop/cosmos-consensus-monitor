@@ -15,10 +15,32 @@ wso.onclose = function (evt) {
     console.log("WS not Connected")
 };
 
+function populate_validators(monikers) {
+    while (prevotes_validators.firstChild) {
+        prevotes_validators.removeChild(prevotes_validators.firstChild);
+    };
+    while (precommits_validators.firstChild) {
+        precommits_validators.removeChild(precommits_validators.firstChild);
+    };
+    monikers.forEach(moniker => {
+        let validator_pv = document.createElement("div");
+        validator_pv.setAttribute("class", "vote");
+        validator_pv.textContent = moniker;
+        prevotes_validators.appendChild(validator_pv);
+        let validator_pc = document.createElement("div");
+        validator_pc.setAttribute("class", "vote");
+        validator_pc.textContent = moniker;
+        precommits_validators.appendChild(validator_pc);
+    });
+}
+
 wso.onmessage = async function (event) {
     let data = JSON.parse(await event.data);
     // console.log("ws:", data);
 
+    if (data.hasOwnProperty('monikers')) {
+        populate_validators(data['monikers']);
+    };
     if (data.hasOwnProperty('version')) {
         let version = data['version'];
         version_div.textContent = version;
@@ -35,17 +57,16 @@ wso.onmessage = async function (event) {
         let pv_voting_power = data['pv_voting_power'];
         prevotes_vp_div.textContent = pv_voting_power;
     };
-    if (data.hasOwnProperty('pv_list')) {
+    if (data.hasOwnProperty('pv_list') && data['pv_list'].length > 0) {
         let prevote_list = data['pv_list'];
-        while (prevotes_validators.firstChild) {
-            prevotes_validators.removeChild(prevotes_validators.firstChild);
-        };
-        prevote_list.forEach(prevote => {
-            let validator = document.createElement('div');
-            validator.setAttribute('class', 'vote monitored-field');
-            validator.textContent = prevote
-            prevotes_validators.appendChild(validator)
+        prevotes_validators.childNodes.forEach(val => {
+            val.classList.remove('voted');
         });
+        for (let i=0; i<prevote_list.length; ++i) {
+            if (prevote_list[i] == 1) {
+                prevotes_validators.childNodes[i].classList.add('voted');
+            }
+        };
     };
     if (data.hasOwnProperty('pc_percentage')) {
         let pc_percentage = data['pc_percentage'];
@@ -55,17 +76,16 @@ wso.onmessage = async function (event) {
         let pc_voting_power = data['pc_voting_power'];
         precommits_vp_div.textContent = pc_voting_power;
     };
-    if (data.hasOwnProperty('pc_list')) {
+    if (data.hasOwnProperty('pc_list') && data['pc_list'].length > 0) {
         let precommit_list = data['pc_list'];
-        while (precommits_validators.firstChild) {
-            precommits_validators.removeChild(precommits_validators.firstChild);
-        };
-        precommit_list.forEach(precommit => {
-            let validator = document.createElement('div');
-            validator.setAttribute('class', 'vote monitored-field');
-            validator.textContent = precommit
-            precommits_validators.appendChild(validator)
+        precommits_validators.childNodes.forEach(val => {
+            val.classList.remove('voted');
         });
+        for (let i=0; i<precommit_list.length; ++i) {
+            if (precommit_list[i]) {
+                precommits_validators.childNodes[i].classList.add('voted');
+            }
+        };
     };
 
 };
