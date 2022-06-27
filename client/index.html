@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Consensus Monitor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body id="body">
+    <div id="height-version-container">
+        <div id="version-container" class="monitored-field">
+            <div id="version-label">Version</div><div id="version-field">v6.0.4</div>
+        </div>
+
+        <div id="block-height-container" class="monitored-field">
+            <div id="height-label">Height</div><div id="block-height">10665235</div>
+        </div>
+    </div>
+
+    <div id="vote-area">
+        <div id="prevotes-container">
+            <div class="vote-header">Prevotes</div>
+
+            <div class="vote-tally">
+                <div id="prevotes-ratio" class="vote-percentage monitored-field">
+                24.22%</div>
+
+                <div id="prevotes-voting-power" class="voting-power monitored-field">
+                353125235/139598238</div>
+            </div>
+
+            <div id="prevotes-validators" class="validator-list">
+                <div class="vote">val-1</div>
+                <div class="vote">val-2</div>
+                <div class="vote">val-3</div>
+                <div class="vote">val-4</div>
+                <div class="vote">val-5</div>
+                <div class="vote">val-6</div>
+                <div class="vote">val-7</div>
+                <div class="vote">val-8</div>
+                <div class="vote">val-9</div>
+                <div class="vote">val-10</div>
+                <div class="vote">val-11</div>
+                <div class="vote">val-12</div>
+                <div class="vote">val-13</div>
+                <div class="vote">val-14</div>
+            </div>
+        </div>
+
+        <div id="precommits-container">
+            <div class="vote-header">Precommits</div>
+            <div class="vote-tally">
+                <div id="precommits-ratio" class="vote-percentage monitored-field">
+                0.0%</div>
+
+                <div id="precommits-voting-power" class="voting-power monitored-field">
+                0/139598238</div>
+            </div>
+            <div id="precommits-validators" class="validator-list">
+            </div>
+        </div>
+    </div>
+</body>
+<script src="js/consensus.js"></script>
+
+</html>
