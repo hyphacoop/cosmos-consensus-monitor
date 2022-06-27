@@ -202,8 +202,8 @@ class ConsensusMonitor:
         pv_validators_voted = pv_checklist.count('x')
         pv_votes_in = int(re.findall(r'\d+/', pv_bit_array)[0][:-1])
         total_voting_power = int(re.findall(r'/\d+', pv_bit_array)[0][1:])
-        pv_percentage = pv_votes_in/total_voting_power
-        self.state['pv_list'] = []
+        pv_percentage = 100*(pv_votes_in/total_voting_power)
+        self.state['pv_list'] = [0 for i in range(len(self.addr_moniker_dict))]
         self.state['pv_percentage'] = '0.00%'
         self.state['pv_voting_power'] = f'0/{total_voting_power}'
 
@@ -219,7 +219,8 @@ class ConsensusMonitor:
                             prevotes_list.append(moniker)
                     except KeyError as exc:
                         print("Validator address not found: ", exc)
-            self.state['pv_list'] = prevotes_list
+            self.state['pv_list'] = [1 if val in prevotes_list
+                                     else 0 for val in self.addr_moniker_dict.values()]
             self.state['pv_percentage'] = f'{pv_percentage:.2f}%'
             self.state['pv_voting_power'] = f'{pv_votes_in}/{total_voting_power}'
 
@@ -237,8 +238,8 @@ class ConsensusMonitor:
         pc_validators_voted = pc_checklist.count('x')
         pc_votes_in = int(re.findall(r'\d+/', pc_bit_array)[0][:-1])
         total_voting_power = int(re.findall(r'/\d+', pc_bit_array)[0][1:])
-        pc_percentage = pc_votes_in/total_voting_power
-        self.state['pc_list'] = []
+        pc_percentage = 100*(pc_votes_in/total_voting_power)
+        self.state['pc_list'] = [0 for i in range(len(self.addr_moniker_dict))]
         self.state['pc_percentage'] = '0.00%'
         self.state['pc_voting_power'] = f'0/{total_voting_power}'
 
@@ -255,7 +256,8 @@ class ConsensusMonitor:
                     except KeyError as exc:
                         print("Validator address not found: ", exc)
 
-            self.state['pc_list'] = precommits_list
+            self.state['pc_list'] = [1 if val in precommits_list
+                                     else 0 for val in self.addr_moniker_dict.values()]
             self.state['pc_percentage'] = f'{pc_percentage:.2f}%'
             self.state['pc_voting_power'] = f'{pc_votes_in}/{total_voting_power}'
 
@@ -312,6 +314,8 @@ class ConsensusMonitor:
         Register websocket client, send current state
         """
         self.client_websockets.append(websocket)
+        moniker_packet = {'monikers': list(self.addr_moniker_dict.values())}
+        await websocket.send(json.dumps(moniker_packet))
         await websocket.send(json.dumps(self.state))
 
     async def remove_client(self, websocket):
