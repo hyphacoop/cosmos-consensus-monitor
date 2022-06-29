@@ -315,8 +315,15 @@ class ConsensusMonitor:
         """
         self.client_websockets.append(websocket)
         moniker_packet = {'monikers': list(self.addr_moniker_dict.values())}
-        await websocket.send(json.dumps(moniker_packet))
-        await websocket.send(json.dumps(self.state))
+        try:
+            await websocket.send(json.dumps(moniker_packet))
+            await websocket.send(json.dumps(self.state))
+        except websockets.exceptions.ConnectionClosedError as cce:
+            print('add_client> ConnectionClosedError: ', cce)
+        except ConnectionResetError as cre:
+            print('add_client> ConnectionResetError: ', cre)
+        except asyncio.exceptions.IncompleteReadError as ire:
+            print('add_client> IncompleteReadError: ', ire)
 
     async def remove_client(self, websocket):
         """
@@ -330,8 +337,11 @@ class ConsensusMonitor:
         """
         while True:
             await self.update_state()
-            for client in self.client_websockets:
-                await client.send(json.dumps(self.state))
+            try:
+                for client in self.client_websockets:
+                    await client.send(json.dumps(self.state))
+            except websockets.exceptions.ConnectionClosedError as cce:
+                print('monitor> ConnectionClosedError: ', cce)
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
@@ -365,12 +375,20 @@ class ConsensusMonitorServer:
         Handle incoming and departing websockets connections
         """
         await self.monitor.add_client(websocket)
+        print(f'{len(self.monitor.client_websockets)} client(s) connected.')
         try:
             async for message in websocket:
                 data = json.loads(message)
                 print(data)
+        except websockets.exceptions.ConnectionClosedError as cce:
+            print('handler> ConnectionClosedError: ', cce)
+        except ConnectionResetError as cre:
+            print('handler> ConnectionResetError: ', cre)
+        except asyncio.exceptions.IncompleteReadError as ire:
+            print('handler> IncompleteReadError: ', ire)
         finally:
             await self.monitor.remove_client(websocket)
+            print(f'{len(self.monitor.client_websockets)} client(s) connected.')
 
 
 if __name__ == "__main__":
@@ -386,7 +404,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--interval',
                         help='the number of seconds to wait between node updates',
                         type=str,
-                        default='0.1')
+                        default='1')
     parser.add_argument('-p', '--port',
                         help="the port to listen on for websockets connections",
                         nargs='?',
