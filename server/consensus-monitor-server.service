@@ -1,0 +1,13 @@
+[Unit]
+Description="Cosmos Consensus Monitor"
+
+[Service]
+User={USER}
+Environment="PATH=/usr/local/go/bin:{USER_HOME}/go/bin:$PATH"
+WorkingDirectory={USER_HOME}/cosmos-consensus-monitor/server
+ExecStart={USER_HOME}/cosmos-consensus-monitor/.env/bin/python consensus_monitor_server.py -a <api_node_address> -r <rpc_node_address>
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

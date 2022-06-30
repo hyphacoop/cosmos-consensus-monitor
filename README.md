@@ -31,6 +31,22 @@ server/consensus_monitor_server.py --api <api_server_node> --rpc <rpc_server_nod
 - `port` is set to 9001 by default
 - `interval` is set to 1 by default
 
+- This can be run inside a `tmux` session.
+
+#### Service
+
+You can run the websockets server as a service:
+
+1. Modify the `consensus-monitor-server.service` file as appropriate.
+2. Make a copy of `consensus-monitor-server.service` or create a link to it in `/etc/systemd/system/`.
+3. Enable and start the service:
+```
+systemctl daemon-reload
+systemctl enable consensus-monitor-server.service
+systemctl start consensus-monitor-server.service
+systemctl status consensus-monitor-server.service
+```
+
 ### Web client
 
 You can serve the web client using the `http` package:
