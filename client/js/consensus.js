@@ -1,3 +1,5 @@
+let api_div = document.getElementById("api-address");
+let rpc_div = document.getElementById("rpc-address");
 let version_div = document.getElementById("version-field");
 let block_height_div = document.getElementById("block-height");
 let prevotes_ratio_div = document.getElementById("prevotes-ratio");
@@ -36,8 +38,11 @@ function populate_validators(monikers) {
 
 wso.onmessage = async function (event) {
     let data = JSON.parse(await event.data);
-    // console.log("ws:", data);
 
+    if (data.hasOwnProperty('data_sources')) {
+        api_div.textContent = data['data_sources']['api'];
+        rpc_div.textContent = data['data_sources']['rpc'];
+    };
     if (data.hasOwnProperty('monikers')) {
         populate_validators(data['monikers']);
     };

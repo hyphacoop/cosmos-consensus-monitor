@@ -36,8 +36,8 @@ class ConsensusMonitor:
                  api_server: str,
                  rpc_server: str,
                  interval_seconds: float = 1):
-        self.api = api_server
-        self.rpc = rpc_server
+        self.node = {'api': api_server,
+                     'rpc': rpc_server}
         self.interval = interval_seconds
         self.node_online = False
         self.state = {}
@@ -52,11 +52,11 @@ class ConsensusMonitor:
         """
         try:
             if next_key:
-                validators = (requests.get(self.api + self.API_ENDPOINT_VALIDATORS +
+                validators = (requests.get(self.node['api'] + self.API_ENDPOINT_VALIDATORS +
                                            '?pagination.key=' +
                                            urllib.parse.quote(next_key))).json()
             else:
-                validators = (requests.get(self.api +
+                validators = (requests.get(self.node['api'] +
                               self.API_ENDPOINT_VALIDATORS)).json()
             return validators
         except ConnectionResetError as exc:
@@ -75,7 +75,7 @@ class ConsensusMonitor:
         """
         try:
             validators = (requests.get(
-                self.rpc + self.RPC_ENDPOINT_VALIDATORS+f'?page={page}')).json()['result']
+                self.node['rpc'] + self.RPC_ENDPOINT_VALIDATORS+f'?page={page}')).json()['result']
             return validators
         except ConnectionResetError as exc:
             print("get_active_validators exception: ConnectionResetError", exc)
@@ -92,7 +92,7 @@ class ConsensusMonitor:
         Obtain the current version through the RPC server
         """
         try:
-            version = (requests.get(self.rpc + self.RPC_ENDPOINT_ABCI_INFO)
+            version = (requests.get(self.node['rpc'] + self.RPC_ENDPOINT_ABCI_INFO)
                        ).json()['result']['response']['version']
             return version
         except ConnectionResetError as exc:
@@ -112,7 +112,7 @@ class ConsensusMonitor:
         Obtain the current block height through the RPC server
         """
         try:
-            current_height = int((requests.get(self.rpc + self.RPC_ENDPOINT_BLOCK)
+            current_height = int((requests.get(self.node['rpc'] + self.RPC_ENDPOINT_BLOCK)
                                   ).json()['result']['block']['header']['height'])
             return current_height
         except ConnectionResetError as exc:
@@ -132,9 +132,9 @@ class ConsensusMonitor:
         Obtain the current round state through the RPC server
         """
         try:
-            # round_state = (requests.get(self.rpc + \
+            # round_state = (requests.get(self.node['rpc'] + \
             # '/dump_consensus_state')).json()['result']['round_state']['votes'][0]
-            round_state = (requests.get(self.rpc + self.RPC_ENDPOINT_CONSENSUS)
+            round_state = (requests.get(self.node['rpc'] + self.RPC_ENDPOINT_CONSENSUS)
                            ).json()['result']['round_state']['height_vote_set'][0]
             return round_state
         except ConnectionResetError as exc:
@@ -315,7 +315,9 @@ class ConsensusMonitor:
         """
         self.client_websockets.append(websocket)
         moniker_packet = {'monikers': list(self.addr_moniker_dict.values())}
+        addr_packet = {'data_sources': self.node}
         try:
+            await websocket.send(json.dumps(addr_packet))
             await websocket.send(json.dumps(moniker_packet))
             await websocket.send(json.dumps(self.state))
         except websockets.exceptions.ConnectionClosedError as cce:
