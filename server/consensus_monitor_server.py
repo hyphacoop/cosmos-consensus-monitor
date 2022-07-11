@@ -14,6 +14,7 @@ import re
 import urllib.parse
 import json
 import argparse
+import logging
 import sys
 import asyncio
 import requests
@@ -59,14 +60,18 @@ class ConsensusMonitor:
                 validators = (requests.get(self.node['api'] +
                               self.API_ENDPOINT_VALIDATORS)).json()
             return validators
-        except ConnectionResetError as exc:
-            print("get_staking_validators exception: ConnectionResetError", exc)
-        except ConnectionRefusedError as exc:
-            print('get_staking_validators exception: ConnectionRefusedError', exc)
-        except ConnectionError as exc:
-            print("get_staking_validators exception: ConnectionError", exc)
-        except requests.exceptions.ConnectionError as exc:
-            print('get_staking_validators exception: NewConnectionError', exc)
+        except ConnectionResetError as cres:
+            logging.exception(
+                f'get_staking_validators> ConnectionResetError: {cres}', exc_info=False)
+        except ConnectionRefusedError as cref:
+            logging.exception(
+                f'get_staking_validators> ConnectionRefusedError: {cref}', exc_info=False)
+        except ConnectionError as cerr:
+            logging.exception(
+                f'get_staking_validators> ConnectionError: {cerr}', exc_info=False)
+        except requests.exceptions.ConnectionError as cerr:
+            logging.exception(
+                f'get_staking_validators> Requests ConnectionError: {cerr}', exc_info=False)
         sys.exit(0)
 
     def get_active_validators(self, page: int = 1):
@@ -77,14 +82,18 @@ class ConsensusMonitor:
             validators = (requests.get(
                 self.node['rpc'] + self.RPC_ENDPOINT_VALIDATORS+f'?page={page}')).json()['result']
             return validators
-        except ConnectionResetError as exc:
-            print("get_active_validators exception: ConnectionResetError", exc)
-        except ConnectionRefusedError as exc:
-            print('get_active_validators exception: ConnectionRefusedError', exc)
-        except ConnectionError as exc:
-            print("get_active_validators exception: ConnectionError", exc)
-        except requests.exceptions.ConnectionError as exc:
-            print('get_active_validators exception: NewConnectionError', exc)
+        except ConnectionResetError as cres:
+            logging.exception(
+                f'get_active_validators> ConnectionResetError: {cres}', exc_info=False)
+        except ConnectionRefusedError as cref:
+            logging.exception(
+                f'get_active_validators> ConnectionRefusedError: {cref}', exc_info=False)
+        except ConnectionError as cerr:
+            logging.exception(
+                f'get_active_validators> ConnectionError: {cerr}', exc_info=False)
+        except requests.exceptions.ConnectionError as cerr:
+            logging.exception(
+                f'get_active_validators> Requests ConnectionError: {cerr}', exc_info=False)
         sys.exit(0)
 
     def get_version(self):
@@ -95,16 +104,24 @@ class ConsensusMonitor:
             version = (requests.get(self.node['rpc'] + self.RPC_ENDPOINT_ABCI_INFO)
                        ).json()['result']['response']['version']
             return version
-        except ConnectionResetError as exc:
-            print("get_version exception: ConnectionResetError", exc)
-        except ConnectionRefusedError as exc:
-            print('get_version exception: ConnectionRefusedError', exc)
-        except ConnectionError as exc:
-            print("get_version exception: ConnectionError", exc)
-        except requests.exceptions.ConnectionError as exc:
-            print('get_version exception: NewConnectionError', exc)
-        except TypeError as exc:
-            print('get_version exception: Type Error', exc)
+        except ConnectionResetError as cres:
+            logging.exception(
+                f'get_version> ConnectionResetError: {cres}', exc_info=False)
+        except ConnectionRefusedError as cref:
+            logging.exception(
+                f'get_version> ConnectionRefusedError: {cref}', exc_info=False)
+        except ConnectionError as cerr:
+            logging.exception(
+                f'get_version> ConnectionError: {cerr}', exc_info=False)
+        except requests.exceptions.ConnectionError as cerr:
+            logging.exception(
+                f'get_version> Requests ConnectionError: {cerr}', exc_info=False)
+        except KeyError as kerr:
+            logging.exception(
+                f'get_version> Key Error: {kerr}', exc_info=False)
+        except TypeError as terr:
+            logging.exception(
+                f'get_version> Type Error: {terr}', exc_info=False)
         return None
 
     def get_block_height(self):
@@ -115,16 +132,24 @@ class ConsensusMonitor:
             current_height = int((requests.get(self.node['rpc'] + self.RPC_ENDPOINT_BLOCK)
                                   ).json()['result']['block']['header']['height'])
             return current_height
-        except ConnectionResetError as exc:
-            print("get_block_height exception: ConnectionResetError", exc)
-        except ConnectionRefusedError as exc:
-            print('get_block_height exception: ConnectionRefusedError', exc)
-        except ConnectionError as exc:
-            print("get_block_height exception: ConnectionError", exc)
-        except requests.exceptions.ConnectionError as exc:
-            print('get_block_height exception: NewConnectionError', exc)
-        except TypeError as exc:
-            print('get_block_height exception: Type Error', exc)
+        except ConnectionResetError as cres:
+            logging.exception(
+                f'get_block_height> ConnectionResetError: {cres}', exc_info=False)
+        except ConnectionRefusedError as cref:
+            logging.exception(
+                f'get_block_height> ConnectionRefusedError: {cref}', exc_info=False)
+        except ConnectionError as cerr:
+            logging.exception(
+                f'get_block_height> ConnectionError: {cerr}', exc_info=False)
+        except requests.exceptions.ConnectionError as cerr:
+            logging.exception(
+                f'get_block_height> Requests ConnectionError: {cerr}', exc_info=False)
+        except KeyError as kerr:
+            logging.exception(
+                f'get_block_height> Key Error: {kerr}', exc_info=False)
+        except TypeError as terr:
+            logging.exception(
+                f'get_block_height> Type Error: {terr}', exc_info=False)
         return None
 
     def get_round_state(self):
@@ -137,16 +162,24 @@ class ConsensusMonitor:
             round_state = (requests.get(self.node['rpc'] + self.RPC_ENDPOINT_CONSENSUS)
                            ).json()['result']['round_state']['height_vote_set'][0]
             return round_state
-        except ConnectionResetError as exc:
-            print("get_round_state exception: ConnectionResetError", exc)
-        except ConnectionRefusedError as exc:
-            print('get_round_state exception: ConnectionRefusedError', exc)
-        except ConnectionError as exc:
-            print("get_round_state exception: ConnectionError", exc)
-        except requests.exceptions.ConnectionError as exc:
-            print('get_round_state exception: NewConnectionError', exc)
-        except TypeError as exc:
-            print('get_round_state exception: Type Error', exc)
+        except ConnectionResetError as cres:
+            logging.exception(
+                f'get_round_state> ConnectionResetError: {cres}', exc_info=False)
+        except ConnectionRefusedError as cref:
+            logging.exception(
+                f'get_round_state> ConnectionRefusedError: {cref}', exc_info=False)
+        except ConnectionError as cerr:
+            logging.exception(
+                f'get_round_state> ConnectionError: {cerr}', exc_info=False)
+        except requests.exceptions.ConnectionError as cerr:
+            logging.exception(
+                f'get_round_state> Requests ConnectionError: {cerr}', exc_info=False)
+        except KeyError as kerr:
+            logging.exception(
+                f'get_round_state> Key Error: {kerr}', exc_info=False)
+        except TypeError as terr:
+            logging.exception(
+                f'get_round_state> Type Error: {terr}', exc_info=False)
         return None
 
     def generate_addr_moniker_dict(self):
@@ -155,7 +188,7 @@ class ConsensusMonitor:
         {consensus_address: moniker, ...}
         """
         # Get list of validators and their consensus pubkeys
-        print("Collecting consensus addresses...")
+        logging.info("Collecting consensus addresses...")
         validators = self.get_staking_validators()
         staking_vals = validators['validators']
         next_key = (validators['pagination']['next_key'])
@@ -163,12 +196,12 @@ class ConsensusMonitor:
             validators = self.get_staking_validators(next_key)
             staking_vals.extend(validators['validators'])
             next_key = validators['pagination']['next_key']
-        print(f'{len(staking_vals)} validators found.')
+        logging.info(f'{len(staking_vals)} validators found.')
         pubkey_moniker_dict = {val['consensus_pubkey']['key']:
                                val['description']['moniker'] for val in staking_vals}
 
         # Get active validator set
-        print('Collecting active validators...')
+        logging.info('Collecting active validators...')
         validators = self.get_active_validators()
         validator_set = validators['validators']
         validators_total = int(validators['total'])
@@ -181,7 +214,7 @@ class ConsensusMonitor:
                 validators_read += int(validators['count'])
                 page += 1
 
-        print(
+        logging.info(
             f'Found {len(validator_set)} addresses in the active validator set.')
         address_pubkey_dict = {
             val['address']: val['pub_key']['value'] for val in validator_set}
@@ -217,8 +250,9 @@ class ConsensusMonitor:
                         moniker = self.addr_moniker_dict[addr]
                         if moniker not in prevotes_list:
                             prevotes_list.append(moniker)
-                    except KeyError as exc:
-                        print("Validator address not found: ", exc)
+                    except KeyError as kerr:
+                        logging.exception(
+                            f'PV> Validator address not found: {kerr}', exc_info=False)
             self.state['pv_list'] = [1 if val in prevotes_list
                                      else 0 for val in self.addr_moniker_dict.values()]
             self.state['pv_percentage'] = f'{pv_percentage:.2f}%'
@@ -253,9 +287,9 @@ class ConsensusMonitor:
                         moniker = self.addr_moniker_dict[addr]
                         if moniker not in precommits_list:
                             precommits_list.append(moniker)
-                    except KeyError as exc:
-                        print("Validator address not found: ", exc)
-
+                    except KeyError as kerr:
+                        logging.exception(
+                            f'PC> Validator address not found: {kerr}', exc_info=False)
             self.state['pc_list'] = [1 if val in precommits_list
                                      else 0 for val in self.addr_moniker_dict.values()]
             self.state['pc_percentage'] = f'{pc_percentage:.2f}%'
@@ -273,12 +307,12 @@ class ConsensusMonitor:
         if version:
             self.state['version'] = version
             if not self.node_online:
-                print('Node is online')
+                logging.info('Node is online')
                 self.node_online = True
         else:
             self.state['msg'] = 'Could not obtain version'
             if self.node_online:
-                print('Node is offline')
+                logging.info('Node is offline')
                 self.node_online = False
             return
 
@@ -286,12 +320,12 @@ class ConsensusMonitor:
         if current_height:
             self.state['height'] = current_height
             if not self.node_online:
-                print('Node is online')
+                logging.info('Node is online')
                 self.node_online = True
         else:
             self.state['msg'] = 'Could not obtain block height'
             if self.node_online:
-                print('Node is offline')
+                logging.info('Node is offline')
                 self.node_online = False
             return
 
@@ -300,12 +334,12 @@ class ConsensusMonitor:
             await self.update_prevotes(round_state)
             await self.update_precommits(round_state)
             if not self.node_online:
-                print('Node is online')
+                logging.info('Node is online')
                 self.node_online = True
         else:
             self.state['msg'] = 'Could not obtain round state'
             if self.node_online:
-                print('Node is offline')
+                logging.info('Node is offline')
                 self.node_online = False
             return
 
@@ -321,13 +355,17 @@ class ConsensusMonitor:
             await websocket.send(json.dumps(moniker_packet))
             await websocket.send(json.dumps(self.state))
         except websockets.exceptions.ConnectionClosedError as cce:
-            print('add_client> ConnectionClosedError: ', cce)
+            logging.exception(
+                f'add_client> ConnectionClosedError: {cce}', exc_info=False)
         except websockets.exceptions.ConnectionClosedOK as cco:
-            print('add_client> ConnectionClosedOK: ', cco)
+            logging.exception(
+                f'add_client> ConnectionClosedOK: {cco}', exc_info=False)
         except ConnectionResetError as cre:
-            print('add_client> ConnectionResetError: ', cre)
+            logging.exception(
+                f'add_client> ConnectionResetError: {cre}', exc_info=False)
         except asyncio.exceptions.IncompleteReadError as ire:
-            print('add_client> IncompleteReadError: ', ire)
+            logging.exception(
+                f'add_client> IncompleteReadError: {ire}', exc_info=False)
 
     async def remove_client(self, websocket):
         """
@@ -345,9 +383,11 @@ class ConsensusMonitor:
                 for client in self.client_websockets:
                     await client.send(json.dumps(self.state))
             except websockets.exceptions.ConnectionClosedError as cce:
-                print('monitor> ConnectionClosedError: ', cce)
+                logging.exception(
+                    f'monitor> ConnectionClosedError: {cce}', exc_info=False)
             except websockets.exceptions.ConnectionClosedOK as cco:
-                print('monitor> ConnectionClosedOK: ', cco)
+                logging.exception(
+                    f'monitor> ConnectionClosedOK: {cco}', exc_info=False)
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
@@ -381,20 +421,25 @@ class ConsensusMonitorServer:
         Handle incoming and departing websockets connections
         """
         await self.monitor.add_client(websocket)
-        print(f'{len(self.monitor.client_websockets)} client(s) connected.')
+        logging.info('%s client(s) connected.', len(
+            self.monitor.client_websockets))
         try:
             async for message in websocket:
                 data = json.loads(message)
-                print(data)
+                logging.info(f'Received message: {data}')
         except websockets.exceptions.ConnectionClosedError as cce:
-            print('handler> ConnectionClosedError: ', cce)
+            logging.exception(
+                f'handler> ConnectionClosedError: {cce}', exc_info=False)
         except ConnectionResetError as cre:
-            print('handler> ConnectionResetError: ', cre)
+            logging.exception(
+                f'handler> ConnectionResetError: {cre}', exc_info=False)
         except asyncio.exceptions.IncompleteReadError as ire:
-            print('handler> IncompleteReadError: ', ire)
+            logging.exception(
+                f'handler> IncompleteReadError: {ire}', exc_info=False)
         finally:
             await self.monitor.remove_client(websocket)
-            print(f'{len(self.monitor.client_websockets)} client(s) connected.')
+            logging.info('%s client(s) connected.', len(
+                self.monitor.client_websockets))
 
 
 if __name__ == "__main__":
@@ -417,6 +462,9 @@ if __name__ == "__main__":
                         type=int,
                         default=9001)
     args = vars(parser.parse_args())
+    # Configure Logging
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(levelname)s %(message)s')
     ms = ConsensusMonitorServer(
         api_server=args['api'],
         rpc_server=args['rpc'],
