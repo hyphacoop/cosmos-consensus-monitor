@@ -322,6 +322,8 @@ class ConsensusMonitor:
             await websocket.send(json.dumps(self.state))
         except websockets.exceptions.ConnectionClosedError as cce:
             print('add_client> ConnectionClosedError: ', cce)
+        except websockets.exceptions.ConnectionClosedOK as cco:
+            print('add_client> ConnectionClosedOK: ', cco)
         except ConnectionResetError as cre:
             print('add_client> ConnectionResetError: ', cre)
         except asyncio.exceptions.IncompleteReadError as ire:
@@ -344,6 +346,8 @@ class ConsensusMonitor:
                     await client.send(json.dumps(self.state))
             except websockets.exceptions.ConnectionClosedError as cce:
                 print('monitor> ConnectionClosedError: ', cce)
+            except websockets.exceptions.ConnectionClosedOK as cco:
+                print('monitor> ConnectionClosedOK: ', cco)
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
