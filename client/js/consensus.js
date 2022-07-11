@@ -1,3 +1,4 @@
+let connection_status = document.getElementById("connection-status-container")
 let api_div = document.getElementById("api-address");
 let rpc_div = document.getElementById("rpc-address");
 let version_div = document.getElementById("version-field");
@@ -10,12 +11,6 @@ let precommits_vp_div = document.getElementById("precommits-voting-power");
 let precommits_validators = document.getElementById("precommits-validators");
 
 var wso = new WebSocket("ws://" + document.domain + ":" + "9001" + "/");
-wso.onopen = function (evt) {
-    console.log("WS Connected");
-}
-wso.onclose = function (evt) {
-    console.log("WS not Connected")
-};
 
 function populate_validators(monikers) {
     while (prevotes_validators.firstChild) {
@@ -35,6 +30,14 @@ function populate_validators(monikers) {
         precommits_validators.appendChild(validator_pc);
     });
 }
+
+wso.onopen = function (evt) {
+    connection_status.style.display = "none";
+}
+
+wso.onclose = function (evt) {
+    connection_status.style.display = "block";
+};
 
 wso.onmessage = async function (event) {
     let data = JSON.parse(await event.data);
@@ -67,7 +70,7 @@ wso.onmessage = async function (event) {
         prevotes_validators.childNodes.forEach(val => {
             val.classList.remove('voted');
         });
-        for (let i=0; i<prevote_list.length; ++i) {
+        for (let i = 0; i < prevote_list.length; ++i) {
             if (prevote_list[i] == 1) {
                 prevotes_validators.childNodes[i].classList.add('voted');
             }
@@ -86,7 +89,7 @@ wso.onmessage = async function (event) {
         precommits_validators.childNodes.forEach(val => {
             val.classList.remove('voted');
         });
-        for (let i=0; i<precommit_list.length; ++i) {
+        for (let i = 0; i < precommit_list.length; ++i) {
             if (precommit_list[i]) {
                 precommits_validators.childNodes[i].classList.add('voted');
             }
