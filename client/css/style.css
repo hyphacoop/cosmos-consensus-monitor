@@ -10,7 +10,7 @@ body {
     --color-off-bg: #e6e6e6;
     --color-off-border: #e6e6e6;
     --color-on-bg: #94ff86;
-     --color-on-border: #94ff86;
+    --color-on-border: #94ff86;
     --color-vote-off: #000000;
     --color-vote-on: #000000;
 }
@@ -20,12 +20,13 @@ body {
     background-color: var(--color-bg);
 }
 
-#top-container {
+#node-info-container {
     display: flex;
     gap: 4px;
 }
 
-#height-version-container, #node-url-container {
+#height-version-container,
+#node-url-container {
     width: 16rem;
     display: grid;
     gap: 1rem;
@@ -49,7 +50,8 @@ body {
     letter-spacing: 0px;
 }
 
-#version-field, #block-height {
+#version-field,
+#block-height {
     font-size: xx-large;
 }
 
@@ -67,7 +69,8 @@ body {
     margin-right: 8px;
 }
 
-#prevotes-container, #precommits-container {
+#prevotes-container,
+#precommits-container {
     width: 100%;
     border: 1px solid var(--color-fg);
     border-radius: 4px;
