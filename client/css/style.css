@@ -142,3 +142,33 @@ body {
         --color-vote-on: #57c4ad;
     }
 }
+
+@media only screen and (max-width: 800px) {
+
+    #node-info-container {
+        display: block;
+    }
+
+    #height-version-container {
+        margin-bottom: 1rem;
+        text-align: center;
+        width: 100%;
+    }
+
+    #node-url-container {
+        display: none;
+    }
+
+    .vote-tally {
+        font-size: x-small;
+    }
+
+    .vote-percentage {
+        min-width: 4rem;
+    }
+
+    .validator-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
