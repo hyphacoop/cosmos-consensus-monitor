@@ -18,11 +18,19 @@ body {
 body {
     color: var(--color-fg);
     background-color: var(--color-bg);
+    margin: 0;
+}
+
+#top-sticky {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-bg);
 }
 
 #node-info-container {
     display: flex;
     gap: 4px;
+    margin: 5px;
 }
 
 #height-version-container,
@@ -64,17 +72,17 @@ body {
 #vote-area {
     display: grid;
     gap: 4px;
-    margin-top: 1rem;
     grid-template-columns: repeat(1, 1fr);
-    margin-right: 8px;
+    width: 100%;
+
 }
 
 #prevotes-container,
 #precommits-container {
-    width: 100%;
     border: 1px solid var(--color-fg);
     border-radius: 4px;
-    padding: 4px;
+    margin: 6px;
+    padding: 6px;
 }
 
 .vote-header {
@@ -150,13 +158,17 @@ body {
     }
 
     #height-version-container {
-        margin-bottom: 1rem;
         text-align: center;
         width: 100%;
     }
 
     #node-url-container {
-        display: none;
+        margin-top: 1rem;
+
+    }
+
+    .node-address {
+        font-size: small;
     }
 
     .vote-tally {
