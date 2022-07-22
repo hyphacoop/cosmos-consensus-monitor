@@ -19,6 +19,7 @@ import sys
 import asyncio
 import requests
 import websockets
+import copy
 
 
 # Consensus monitor class
@@ -295,13 +296,18 @@ class ConsensusMonitor:
             self.state['pc_percentage'] = f'{pc_percentage:.2f}%'
             self.state['pc_voting_power'] = f'{pc_votes_in}/{total_voting_power}'
 
-    async def update_state(self):
+    async def update_state(self) -> bool:
         """
         Update the state to be broadcast to websockets clients
         The state dictionary includes:
         - block height
         - vote stats for prevotes and precommits
+
+        True is returned if the state changed from what it was previously,
+        False is returned otherwise.
         """
+
+        self.old_state = copy.deepcopy(self.state)
         self.state = {}
         version = self.get_version()
         if version:
@@ -314,7 +320,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state == self.old_state
 
         current_height = self.get_block_height()
         if current_height:
@@ -327,7 +333,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state == self.old_state
 
         round_state = self.get_round_state()
         if round_state:
@@ -341,7 +347,9 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state == self.old_state
+        
+        return self.state == self.old_state
 
     async def add_client(self, websocket):
         """
@@ -378,16 +386,17 @@ class ConsensusMonitor:
         Update the consensus state and broadcast every self.interval seconds
         """
         while True:
-            await self.update_state()
-            try:
-                for client in self.client_websockets:
-                    await client.send(json.dumps(self.state))
-            except websockets.exceptions.ConnectionClosedError as cce:
-                logging.exception(
-                    f'monitor> ConnectionClosedError: {cce}', exc_info=False)
-            except websockets.exceptions.ConnectionClosedOK as cco:
-                logging.exception(
-                    f'monitor> ConnectionClosedOK: {cco}', exc_info=False)
+            if await self.update_state():
+                try:
+                    for client in self.client_websockets:
+                        await client.send(json.dumps(self.state))
+                except websockets.exceptions.ConnectionClosedError as cce:
+                    logging.exception(
+                        f'monitor> ConnectionClosedError: {cce}', exc_info=False)
+                except websockets.exceptions.ConnectionClosedOK as cco:
+                    logging.exception(
+                        f'monitor> ConnectionClosedOK: {cco}', exc_info=False)
+            
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
