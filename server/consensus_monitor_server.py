@@ -25,6 +25,7 @@ import websockets
 # Also probably a bit more CPU usage?
 MAX_CONCURRENT_SEND_COROS = 100
 
+
 async def gather_limit(n, *aws, return_exceptions=False):
     """
     Like asyncio.gather but concurrency is limited to n at a time.
@@ -40,6 +41,8 @@ async def gather_limit(n, *aws, return_exceptions=False):
     return await asyncio.gather(*(sem_aw(aw) for aw in aws), return_exceptions=return_exceptions)
 
 # Consensus monitor class
+
+
 class ConsensusMonitor:
     """
     Periodically requests and parses consensus data from a Cosmos node.
@@ -365,7 +368,7 @@ class ConsensusMonitor:
                 logging.info('Node is offline')
                 self.node_online = False
             return self.state != self.old_state
-        
+
         return self.state != self.old_state
 
     async def add_client(self, websocket):
@@ -407,7 +410,8 @@ class ConsensusMonitor:
                 state_json = json.dumps(self.state)
                 results = await gather_limit(
                     MAX_CONCURRENT_SEND_COROS,
-                    *[client.send(state_json) for client in self.client_websockets],
+                    *[client.send(state_json)
+                      for client in self.client_websockets],
                     return_exceptions=True,
                 )
                 for result in results:
@@ -417,7 +421,7 @@ class ConsensusMonitor:
                     if isinstance(result, websockets.exceptions.ConnectionClosedOK):
                         logging.exception(
                             f'monitor> ConnectionClosedOK: {result}', exc_info=False)
-            
+
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
