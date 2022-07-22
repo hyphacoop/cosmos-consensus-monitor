@@ -20,6 +20,24 @@ import asyncio
 import requests
 import websockets
 
+# The maximum number of websocket .send coroutines running at once
+# Larger number means more concurrent bandwidth usage, each message is ~383 bytes
+# Also probably a bit more CPU usage?
+MAX_CONCURRENT_SEND_COROS = 100
+
+async def gather_limit(n, *aws, return_exceptions=False):
+    """
+    Like asyncio.gather but concurrency is limited to n at a time.
+
+    Source: https://stackoverflow.com/a/61478547
+    """
+
+    semaphore = asyncio.Semaphore(n)
+
+    async def sem_aw(aw):
+        async with semaphore:
+            return await aw
+    return await asyncio.gather(*(sem_aw(aw) for aw in aws), return_exceptions=return_exceptions)
 
 # Consensus monitor class
 class ConsensusMonitor:
@@ -386,15 +404,19 @@ class ConsensusMonitor:
         """
         while True:
             if await self.update_state():
-                try:
-                    for client in self.client_websockets:
-                        await client.send(json.dumps(self.state))
-                except websockets.exceptions.ConnectionClosedError as cce:
-                    logging.exception(
-                        f'monitor> ConnectionClosedError: {cce}', exc_info=False)
-                except websockets.exceptions.ConnectionClosedOK as cco:
-                    logging.exception(
-                        f'monitor> ConnectionClosedOK: {cco}', exc_info=False)
+                state_json = json.dumps(self.state)
+                results = await gather_limit(
+                    MAX_CONCURRENT_SEND_COROS,
+                    *[client.send(state_json) for client in self.client_websockets],
+                    return_exceptions=True,
+                )
+                for result in results:
+                    if isinstance(result, websockets.exceptions.ConnectionClosedError):
+                        logging.exception(
+                            f'monitor> ConnectionClosedError: {result}', exc_info=False)
+                    if isinstance(result, websockets.exceptions.ConnectionClosedOK):
+                        logging.exception(
+                            f'monitor> ConnectionClosedOK: {result}', exc_info=False)
             
             if self.node_online:
                 await asyncio.sleep(self.interval)
