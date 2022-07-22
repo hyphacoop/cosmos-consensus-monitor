@@ -453,23 +453,10 @@ class ConsensusMonitorServer:
         await self.monitor.add_client(websocket)
         logging.info('%s client(s) connected.', len(
             self.monitor.client_websockets))
-        try:
-            async for message in websocket:
-                data = json.loads(message)
-                logging.info(f'Received message: {data}')
-        except websockets.exceptions.ConnectionClosedError as cce:
-            logging.exception(
-                f'handler> ConnectionClosedError: {cce}', exc_info=False)
-        except ConnectionResetError as cre:
-            logging.exception(
-                f'handler> ConnectionResetError: {cre}', exc_info=False)
-        except asyncio.exceptions.IncompleteReadError as ire:
-            logging.exception(
-                f'handler> IncompleteReadError: {ire}', exc_info=False)
-        finally:
-            await self.monitor.remove_client(websocket)
-            logging.info('%s client(s) connected.', len(
-                self.monitor.client_websockets))
+        await websocket.wait_closed()
+        await self.monitor.remove_client(websocket)
+        logging.info('%s client(s) connected.', len(
+            self.monitor.client_websockets))
 
 
 if __name__ == "__main__":
