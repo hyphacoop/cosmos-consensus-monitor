@@ -63,6 +63,7 @@ class ConsensusMonitor:
         self.interval = interval_seconds
         self.node_online = False
         self.state = {}
+        self.old_state = {}
         self.addr_moniker_dict = {}
         self.client_websockets = []
 

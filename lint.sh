@@ -8,13 +8,13 @@ then
 	python -m autopep8 --in-place --recursive .
 
     echo "Linting python"
-    python -m pylint server/*.py --disable=E1101,W1203
+    python -m pylint server/*.py --disable=E1101,W1203,C0103
 fi
 
 if [ $CI ]
 then
     echo "Linting python"
-    python -m pylint server/*.py --disable=W0511,E0401,R0801,E1101,W1203
+    python -m pylint server/*.py --disable=W0511,E0401,R0801,E1101,W1203,C0103
     if [ $? -ne 0 ]
     then
     	pylint=1
