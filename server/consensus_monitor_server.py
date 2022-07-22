@@ -319,7 +319,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return self.state == self.old_state
+            return self.state != self.old_state
 
         current_height = self.get_block_height()
         if current_height:
@@ -332,7 +332,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return self.state == self.old_state
+            return self.state != self.old_state
 
         round_state = self.get_round_state()
         if round_state:
@@ -346,9 +346,9 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return self.state == self.old_state
+            return self.state != self.old_state
         
-        return self.state == self.old_state
+        return self.state != self.old_state
 
     async def add_client(self, websocket):
         """
