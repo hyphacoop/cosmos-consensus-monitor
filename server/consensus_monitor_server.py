@@ -19,7 +19,6 @@ import sys
 import asyncio
 import requests
 import websockets
-import copy
 
 
 # Consensus monitor class
@@ -307,7 +306,7 @@ class ConsensusMonitor:
         False is returned otherwise.
         """
 
-        self.old_state = copy.deepcopy(self.state)
+        self.old_state = self.state
         self.state = {}
         version = self.get_version()
         if version:
