@@ -35,8 +35,6 @@ async def gather_limit(max_coros, *awaits, return_exceptions=False):
             return await coro
     return await asyncio.gather(*(sem_aw(aw) for aw in awaits), return_exceptions=return_exceptions)
 
-# Consensus monitor class
-
 
 class ConsensusMonitor:
     """
