@@ -26,19 +26,19 @@ import websockets
 MAX_CONCURRENT_SEND_COROS = 100
 
 
-async def gather_limit(n, *aws, return_exceptions=False):
+async def gather_limit(max_coros, *awaits, return_exceptions=False):
     """
-    Like asyncio.gather but concurrency is limited to n at a time.
+    Like asyncio.gather but concurrency is limited to 'max_coros' at a time.
 
     Source: https://stackoverflow.com/a/61478547
     """
 
-    semaphore = asyncio.Semaphore(n)
+    semaphore = asyncio.Semaphore(max_coros)
 
-    async def sem_aw(aw):
+    async def sem_aw(coro):
         async with semaphore:
-            return await aw
-    return await asyncio.gather(*(sem_aw(aw) for aw in aws), return_exceptions=return_exceptions)
+            return await coro
+    return await asyncio.gather(*(sem_aw(aw) for aw in awaits), return_exceptions=return_exceptions)
 
 # Consensus monitor class
 
