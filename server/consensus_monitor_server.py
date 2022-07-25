@@ -20,11 +20,6 @@ import asyncio
 import requests
 import websockets
 
-# The maximum number of websocket .send coroutines running at once
-# Larger number means more concurrent bandwidth usage, each message is ~383 bytes
-# Also probably a bit more CPU usage?
-MAX_CONCURRENT_SEND_COROS = 100
-
 
 async def gather_limit(max_coros, *awaits, return_exceptions=False):
     """
@@ -53,6 +48,11 @@ class ConsensusMonitor:
     RPC_ENDPOINT_ABCI_INFO = '/abci_info'
     RPC_ENDPOINT_BLOCK = '/block'
     RPC_ENDPOINT_CONSENSUS = '/consensus_state'
+
+    # The maximum number of websocket .send coroutines running at once
+    # Larger number means more concurrent bandwidth usage, each message is ~383 bytes
+    # Also probably a bit more CPU usage?
+    MAX_CONCURRENT_SEND_COROS = 100
 
     def __init__(self,
                  api_server: str,
@@ -410,7 +410,7 @@ class ConsensusMonitor:
             if await self.update_state():
                 state_json = json.dumps(self.state)
                 results = await gather_limit(
-                    MAX_CONCURRENT_SEND_COROS,
+                    self.MAX_CONCURRENT_SEND_COROS,
                     *[client.send(state_json)
                       for client in self.client_websockets],
                     return_exceptions=True,
