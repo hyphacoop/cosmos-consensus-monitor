@@ -21,7 +21,21 @@ import requests
 import websockets
 
 
-# Consensus monitor class
+async def gather_limit(max_coros, *awaits, return_exceptions=False):
+    """
+    Like asyncio.gather but concurrency is limited to 'max_coros' at a time.
+
+    Source: https://stackoverflow.com/a/61478547
+    """
+
+    semaphore = asyncio.Semaphore(max_coros)
+
+    async def sem_aw(coro):
+        async with semaphore:
+            return await coro
+    return await asyncio.gather(*(sem_aw(aw) for aw in awaits), return_exceptions=return_exceptions)
+
+
 class ConsensusMonitor:
     """
     Periodically requests and parses consensus data from a Cosmos node.
@@ -33,6 +47,11 @@ class ConsensusMonitor:
     RPC_ENDPOINT_BLOCK = '/block'
     RPC_ENDPOINT_CONSENSUS = '/consensus_state'
 
+    # The maximum number of websocket .send coroutines running at once
+    # Larger number means more concurrent bandwidth usage, each message is ~383 bytes
+    # Also probably a bit more CPU usage?
+    MAX_CONCURRENT_SEND_COROS = 100
+
     def __init__(self,
                  api_server: str,
                  rpc_server: str,
@@ -42,6 +61,7 @@ class ConsensusMonitor:
         self.interval = interval_seconds
         self.node_online = False
         self.state = {}
+        self.old_state = {}
         self.addr_moniker_dict = {}
         self.client_websockets = []
 
@@ -295,13 +315,18 @@ class ConsensusMonitor:
             self.state['pc_percentage'] = f'{pc_percentage:.2f}%'
             self.state['pc_voting_power'] = f'{pc_votes_in}/{total_voting_power}'
 
-    async def update_state(self):
+    async def update_state(self) -> bool:
         """
         Update the state to be broadcast to websockets clients
         The state dictionary includes:
         - block height
         - vote stats for prevotes and precommits
+
+        True is returned if the state changed from what it was previously,
+        False is returned otherwise.
         """
+
+        self.old_state = self.state
         self.state = {}
         version = self.get_version()
         if version:
@@ -314,7 +339,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state != self.old_state
 
         current_height = self.get_block_height()
         if current_height:
@@ -327,7 +352,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state != self.old_state
 
         round_state = self.get_round_state()
         if round_state:
@@ -341,7 +366,9 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return
+            return self.state != self.old_state
+
+        return self.state != self.old_state
 
     async def add_client(self, websocket):
         """
@@ -378,16 +405,22 @@ class ConsensusMonitor:
         Update the consensus state and broadcast every self.interval seconds
         """
         while True:
-            await self.update_state()
-            try:
-                for client in self.client_websockets:
-                    await client.send(json.dumps(self.state))
-            except websockets.exceptions.ConnectionClosedError as cce:
-                logging.exception(
-                    f'monitor> ConnectionClosedError: {cce}', exc_info=False)
-            except websockets.exceptions.ConnectionClosedOK as cco:
-                logging.exception(
-                    f'monitor> ConnectionClosedOK: {cco}', exc_info=False)
+            if await self.update_state():
+                state_json = json.dumps(self.state)
+                results = await gather_limit(
+                    self.MAX_CONCURRENT_SEND_COROS,
+                    *[client.send(state_json)
+                      for client in self.client_websockets],
+                    return_exceptions=True,
+                )
+                for result in results:
+                    if isinstance(result, websockets.exceptions.ConnectionClosedError):
+                        logging.exception(
+                            f'monitor> ConnectionClosedError: {result}', exc_info=False)
+                    if isinstance(result, websockets.exceptions.ConnectionClosedOK):
+                        logging.exception(
+                            f'monitor> ConnectionClosedOK: {result}', exc_info=False)
+
             if self.node_online:
                 await asyncio.sleep(self.interval)
             else:
@@ -423,23 +456,10 @@ class ConsensusMonitorServer:
         await self.monitor.add_client(websocket)
         logging.info('%s client(s) connected.', len(
             self.monitor.client_websockets))
-        try:
-            async for message in websocket:
-                data = json.loads(message)
-                logging.info(f'Received message: {data}')
-        except websockets.exceptions.ConnectionClosedError as cce:
-            logging.exception(
-                f'handler> ConnectionClosedError: {cce}', exc_info=False)
-        except ConnectionResetError as cre:
-            logging.exception(
-                f'handler> ConnectionResetError: {cre}', exc_info=False)
-        except asyncio.exceptions.IncompleteReadError as ire:
-            logging.exception(
-                f'handler> IncompleteReadError: {ire}', exc_info=False)
-        finally:
-            await self.monitor.remove_client(websocket)
-            logging.info('%s client(s) connected.', len(
-                self.monitor.client_websockets))
+        await websocket.wait_closed()
+        await self.monitor.remove_client(websocket)
+        logging.info('%s client(s) connected.', len(
+            self.monitor.client_websockets))
 
 
 if __name__ == "__main__":

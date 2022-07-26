@@ -10,7 +10,11 @@ let precommits_ratio_div = document.getElementById("precommits-ratio");
 let precommits_vp_div = document.getElementById("precommits-voting-power");
 let precommits_validators = document.getElementById("precommits-validators");
 
-var wso = new WebSocket("ws://" + document.domain + ":" + "9001" + "/");
+var wsProto = "ws://";
+if (window.location.protocol === "https:") {
+    wsProto = "wss://";
+}
+var wso = new WebSocket(wsProto + document.domain + ":" + "9001" + "/");
 
 function populate_validators(monikers) {
     while (prevotes_validators.firstChild) {
