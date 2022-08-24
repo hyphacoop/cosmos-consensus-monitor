@@ -12,72 +12,60 @@
     <div id="connection-status-container">
         ⚠ NOT CONNECTED TO MONITOR SERVER
     </div>
-    <div id="top-sticky">
-        <div id="node-info-container">
+    <div id="top-sticky-area">
+        <div id="status-container">
             <div id="height-version-container">
                 <div class="monitored-field-container">
                     <div id="version-label" class="label">VERSION</div>
-                    <div id="version-field">v6.0.4</div>
+                    <div id="version" class="monitored-field">v6.0.4</div>
                 </div>
 
                 <div class="monitored-field-container">
                     <div id="height-label" class="label">BLOCK HEIGHT</div>
-                    <div id="block-height">10665235</div>
+                    <div id="block-height" class="monitored-field">10665235</div>
                 </div>
             </div>
 
-            <div id="node-url-container">
-                <div class="monitored-field-container">
-                    <div id="api-label" class="label">API ADDRESS</div>
-                    <div id="api-address" class="node-address">http://api.cosmos.testnet</div>
+            <div class="vote-progress-container">
+                <div class="vote-display">
+                    <div class="vote-label">PREVOTES</div>
+                    <div id="prevotes-percentage" class="vote-percentage">
+                        0%
+                    </div>
+                    <div class="bar-container">
+                        <div class="top_indicator"></div>
+                        <div id="prevotes-bar-box" class="progress-bar-box">
+
+                        </div>
+                        <div class="bottom_indicator"></div>
+                    </div>
                 </div>
-                <div class="monitored-field-container">
-                    <div id="rpc-label" class="label">RPC ADDRESS</div>
-                    <div id="rpc-address" class="node-address">http://rpc.cosmos.testnet</div>
+                <div class="vote-display">
+                    <div class="vote-label">PRECOMMITS</div>
+                    <div id="precommits-percentage" class="vote-percentage">
+                        0%
+                    </div>
+                    <div class="bar-container">
+                        <div class="top_indicator"></div>
+                        <div id="precommits-bar-box" class="progress-bar-box">
+
+                        </div>
+                        <div class="bottom_indicator"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="vote-area">
-        <div id="prevotes-container">
+        <div id="prevotes-container" class="validator-container">
             <div class="label">PREVOTES</div>
-
-            <div class="vote-tally">
-                <div id="prevotes-ratio" class="vote-percentage monitored-field-container">
-                    24.22%</div>
-
-                <div id="prevotes-voting-power" class="voting-power monitored-field-container">
-                    353125235/139598238</div>
-            </div>
-
             <div id="prevotes-validators" class="validator-list">
-                <div class="vote">val-1</div>
-                <div class="vote">val-2</div>
-                <div class="vote">val-3</div>
-                <div class="vote">val-4</div>
-                <div class="vote">val-5</div>
-                <div class="vote">val-6</div>
-                <div class="vote">val-7</div>
-                <div class="vote">val-8</div>
-                <div class="vote">val-9</div>
-                <div class="vote">val-10</div>
-                <div class="vote">val-11</div>
-                <div class="vote">val-12</div>
-                <div class="vote">val-13</div>
-                <div class="vote">val-14</div>
             </div>
         </div>
 
-        <div id="precommits-container">
+        <div id="precommits-container" class="validator-container">
             <div class="label">PRECOMMITS</div>
-            <div class="vote-tally">
-                <div id="precommits-ratio" class="vote-percentage monitored-field-container">
-                    0.0%</div>
-
-                <div id="precommits-voting-power" class="voting-power monitored-field-container">
-                    0/139598238</div>
-            </div>
             <div id="precommits-validators" class="validator-list">
             </div>
         </div>
