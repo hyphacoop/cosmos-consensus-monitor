@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 """
-A websockets server that queries a Cosmos node to obtain:
-- Block height via RPC endpoint
-- Consensus data via API endpoint
+A websockets server that provides real-time data on the consensus process of a Cosmos chain:
+- During initialization,
+-  1. the active validator set is registered using API and RPC queries
+-  2. a subscription is created for the the NewRoundStep and Vote events via RPC websocket
+- As soon as an event is received, the consensus state is queried
+  to obtain the prevotes and precommits as a percentage of the total voting power.
 
 Syntax:
 ./consensus_monitor_server.py -a <API server> -r <RPC server> -p <ws listening port>
@@ -10,7 +13,6 @@ Example:
 ./consensus_monitor_server.py -a api.cosmos.network -r rpc.cosmos.network -p 9090
 
 """
-import re
 import urllib.parse
 import json
 import argparse
@@ -38,7 +40,7 @@ async def gather_limit(max_coros, *awaits, return_exceptions=False):
 
 class ConsensusMonitor:
     """
-    Periodically requests and parses consensus data from a Cosmos node.
+    Requests and parses consensus data from a Cosmos node.
     Packages the data and forwards it to all connected websockets clients.
     """
     API_ENDPOINT_VALIDATORS = '/cosmos/staking/v1beta1/validators'
@@ -48,19 +50,19 @@ class ConsensusMonitor:
     RPC_ENDPOINT_CONSENSUS = '/consensus_state'
 
     # The maximum number of websocket .send coroutines running at once
-    # Larger number means more concurrent bandwidth usage, each message is ~383 bytes
-    # Also probably a bit more CPU usage?
+    # Larger number means more concurrent bandwidth usage,
+    # also probably a bit more CPU usage?
     MAX_CONCURRENT_SEND_COROS = 100
 
     def __init__(self,
                  api_server: str,
-                 rpc_server: str,
-                 interval_seconds: float = 1):
+                 rpc_server: str):
         self.node = {'api': api_server,
                      'rpc': rpc_server}
-        self.interval = interval_seconds
         self.node_online = False
-        self.state = {}
+        self.state = {'prevote_addresses': [],
+                      'precommit_addresses': [],
+                      'round_step': 'RoundStepPropose'}
         self.old_state = {}
         self.addr_moniker_dict = {}
         self.client_websockets = []
@@ -144,41 +146,11 @@ class ConsensusMonitor:
                 f'get_version> Type Error: {terr}', exc_info=False)
         return None
 
-    def get_block_height(self):
-        """
-        Obtain the current block height through the RPC server
-        """
-        try:
-            current_height = int((requests.get(self.node['rpc'] + self.RPC_ENDPOINT_BLOCK)
-                                  ).json()['result']['block']['header']['height'])
-            return current_height
-        except ConnectionResetError as cres:
-            logging.exception(
-                f'get_block_height> ConnectionResetError: {cres}', exc_info=False)
-        except ConnectionRefusedError as cref:
-            logging.exception(
-                f'get_block_height> ConnectionRefusedError: {cref}', exc_info=False)
-        except ConnectionError as cerr:
-            logging.exception(
-                f'get_block_height> ConnectionError: {cerr}', exc_info=False)
-        except requests.exceptions.ConnectionError as cerr:
-            logging.exception(
-                f'get_block_height> Requests ConnectionError: {cerr}', exc_info=False)
-        except KeyError as kerr:
-            logging.exception(
-                f'get_block_height> Key Error: {kerr}', exc_info=False)
-        except TypeError as terr:
-            logging.exception(
-                f'get_block_height> Type Error: {terr}', exc_info=False)
-        return None
-
     def get_round_state(self):
         """
         Obtain the current round state through the RPC server
         """
         try:
-            # round_state = (requests.get(self.node['rpc'] + \
-            # '/dump_consensus_state')).json()['result']['round_state']['votes'][0]
             round_state = (requests.get(self.node['rpc'] + self.RPC_ENDPOINT_CONSENSUS)
                            ).json()['result']['round_state']['height_vote_set'][0]
             return round_state
@@ -238,6 +210,7 @@ class ConsensusMonitor:
             f'Found {len(validator_set)} addresses in the active validator set.')
         address_pubkey_dict = {
             val['address']: val['pub_key']['value'] for val in validator_set}
+
         # Clip the consensus address to match the vote tally reporting length
         self.addr_moniker_dict = {
             addr[:12]: pubkey_moniker_dict[pubkey] for addr, pubkey in address_pubkey_dict.items()}
@@ -251,21 +224,22 @@ class ConsensusMonitor:
         """
         prevotes = round_state['prevotes']
         pv_bit_array = round_state['prevotes_bit_array']
-        pv_checklist = re.findall(r':[_x]+', pv_bit_array)[0][1:]
-        pv_validators_voted = pv_checklist.count('x')
-        pv_votes_in = int(re.findall(r'\d+/', pv_bit_array)[0][:-1])
-        total_voting_power = int(re.findall(r'/\d+', pv_bit_array)[0][1:])
+        ratio = pv_bit_array.split()[1]
+        pv_votes_in = int(ratio.split("/")[0])
+        total_voting_power = int(ratio.split("/")[1])
         pv_percentage = 100*(pv_votes_in/total_voting_power)
         self.state['pv_list'] = [0 for i in range(len(self.addr_moniker_dict))]
         self.state['pv_percentage'] = '0.00%'
-        self.state['pv_voting_power'] = f'0/{total_voting_power}'
+        self.state['prevote_addresses'] = []
 
-        if pv_validators_voted > 0:
+        # if pv_validators_voted > 0:
+        if pv_votes_in > 0:
             prevotes_list = []
             for prevote in prevotes:
                 if prevote != 'nil-Vote':
                     # consensus address is clipped to 12 characters
                     addr = prevote.split(':')[1].split(' ')[0]
+                    self.state['prevote_addresses'].append(addr)
                     try:
                         moniker = self.addr_moniker_dict[addr]
                         if moniker not in prevotes_list:
@@ -276,7 +250,6 @@ class ConsensusMonitor:
             self.state['pv_list'] = [1 if val in prevotes_list
                                      else 0 for val in self.addr_moniker_dict.values()]
             self.state['pv_percentage'] = f'{pv_percentage:.2f}%'
-            self.state['pv_voting_power'] = f'{pv_votes_in}/{total_voting_power}'
 
     async def update_precommits(self, round_state: dict):
         """
@@ -288,21 +261,21 @@ class ConsensusMonitor:
         # Precommits
         precommits = round_state['precommits']
         pc_bit_array = round_state['precommits_bit_array']
-        pc_checklist = re.findall(r':[_x]+', pc_bit_array)[0][1:]
-        pc_validators_voted = pc_checklist.count('x')
-        pc_votes_in = int(re.findall(r'\d+/', pc_bit_array)[0][:-1])
-        total_voting_power = int(re.findall(r'/\d+', pc_bit_array)[0][1:])
+        ratio = pc_bit_array.split()[1]
+        pc_votes_in = int(ratio.split("/")[0])
+        total_voting_power = int(ratio.split("/")[1])
         pc_percentage = 100*(pc_votes_in/total_voting_power)
         self.state['pc_list'] = [0 for i in range(len(self.addr_moniker_dict))]
         self.state['pc_percentage'] = '0.00%'
-        self.state['pc_voting_power'] = f'0/{total_voting_power}'
+        self.state['prevote_addresses'] = []
 
-        if pc_validators_voted > 0:
+        if pc_votes_in > 0:
             precommits_list = []
             for precommit in precommits:
                 if precommit != 'nil-Vote':
                     # consensus address is clipped to 12 characters
                     addr = precommit.split(':')[1].split(' ')[0]
+                    self.state['prevote_addresses'].append(addr)
                     try:
                         moniker = self.addr_moniker_dict[addr]
                         if moniker not in precommits_list:
@@ -313,47 +286,15 @@ class ConsensusMonitor:
             self.state['pc_list'] = [1 if val in precommits_list
                                      else 0 for val in self.addr_moniker_dict.values()]
             self.state['pc_percentage'] = f'{pc_percentage:.2f}%'
-            self.state['pc_voting_power'] = f'{pc_votes_in}/{total_voting_power}'
 
-    async def update_state(self) -> bool:
+    async def update_state(self):
         """
-        Update the state to be broadcast to websockets clients
+        Update the prevotes and precommits, broadcast state to websockets clients
         The state dictionary includes:
-        - block height
-        - vote stats for prevotes and precommits
-
-        True is returned if the state changed from what it was previously,
-        False is returned otherwise.
+        - prevote validators and % of voting power
+        - precommit validators and % of voting power
+        - current round step
         """
-
-        self.old_state = self.state
-        self.state = {}
-        version = self.get_version()
-        if version:
-            self.state['version'] = version
-            if not self.node_online:
-                logging.info('Node is online')
-                self.node_online = True
-        else:
-            self.state['msg'] = 'Could not obtain version'
-            if self.node_online:
-                logging.info('Node is offline')
-                self.node_online = False
-            return self.state != self.old_state
-
-        current_height = self.get_block_height()
-        if current_height:
-            self.state['height'] = current_height
-            if not self.node_online:
-                logging.info('Node is online')
-                self.node_online = True
-        else:
-            self.state['msg'] = 'Could not obtain block height'
-            if self.node_online:
-                logging.info('Node is offline')
-                self.node_online = False
-            return self.state != self.old_state
-
         round_state = self.get_round_state()
         if round_state:
             await self.update_prevotes(round_state)
@@ -366,9 +307,7 @@ class ConsensusMonitor:
             if self.node_online:
                 logging.info('Node is offline')
                 self.node_online = False
-            return self.state != self.old_state
-
-        return self.state != self.old_state
+        await self.broadcast(json.dumps(self.state))
 
     async def add_client(self, websocket):
         """
@@ -400,31 +339,70 @@ class ConsensusMonitor:
         """
         self.client_websockets.remove(websocket)
 
-    async def monitor(self):
+    async def process_query_response(self, data):
         """
-        Update the consensus state and broadcast every self.interval seconds
+        Parse subscription event data
+        Handles NewRoundStep and Vote events
         """
-        while True:
-            if await self.update_state():
-                state_json = json.dumps(self.state)
-                results = await gather_limit(
-                    self.MAX_CONCURRENT_SEND_COROS,
-                    *[client.send(state_json)
-                      for client in self.client_websockets],
-                    return_exceptions=True,
-                )
-                for result in results:
-                    if isinstance(result, websockets.exceptions.ConnectionClosedError):
-                        logging.exception(
-                            f'monitor> ConnectionClosedError: {result}', exc_info=False)
-                    if isinstance(result, websockets.exceptions.ConnectionClosedOK):
-                        logging.exception(
-                            f'monitor> ConnectionClosedOK: {result}', exc_info=False)
+        value = data['data']['value']
+        new_event = data['query'].split('=')[1].split("'")[1]
+        if new_event == 'NewRoundStep':
+            self.state['round_step'] = value['step']
+            await self.update_state()
+            if self.state['round_step'] == 'RoundStepNewHeight':
+                msg = json.dumps(
+                    {'height': value['height'], 'version': self.get_version()})
+                await self.broadcast(msg)
+        elif new_event == 'Vote':
+            if self.state['round_step'] == 'RoundStepPrevote':
+                if (value['Vote']['type'] == 1) and \
+                        (value['Vote']['validator_address'][:12] in self.addr_moniker_dict):
+                    await self.update_state()
+            elif self.state['round_step'] == 'RoundStepPrecommit':
+                if (value['Vote']['type'] == 2) and \
+                        (value['Vote']['validator_address'][:12] in self.addr_moniker_dict):
+                    await self.update_state()
 
-            if self.node_online:
-                await asyncio.sleep(self.interval)
-            else:
-                await asyncio.sleep(10)
+    async def subscribe(self):
+        """
+        Subscribes to Tendermint RPC websocket endpoints
+        """
+        ws_url = self.node['rpc'].replace('http', 'ws')
+        ws_url = ws_url.replace('https', 'wss')
+        ws_url = ws_url + '/websocket'
+        async for websocket in websockets.connect(ws_url):
+            try:
+                await websocket.send('{ "jsonrpc": "2.0", "method": "subscribe", \
+                    "params": ["tm.event=\'Vote\'"], "id": 1 }')
+                await websocket.recv()
+                await websocket.send('{ "jsonrpc": "2.0", "method": "subscribe", \
+                    "params": ["tm.event=\'NewRoundStep\'"], "id": 2 }')
+                await websocket.recv()
+
+                while True:
+                    data = json.loads(await websocket.recv())['result']
+                    if 'query' in data:
+                        await self.process_query_response(data)
+            except websockets.exceptions.ConnectionClosedError as cce:
+                print("subscription> Connection Closed Error: ", cce)
+
+    async def broadcast(self, message):
+        """
+        Sends the message to all connected websocket clients
+        """
+        results = await gather_limit(
+            self.MAX_CONCURRENT_SEND_COROS,
+            *[client.send(message)
+              for client in self.client_websockets],
+            return_exceptions=True,
+        )
+        for result in results:
+            if isinstance(result, websockets.exceptions.ConnectionClosedError):
+                logging.exception(
+                    f'monitor> ConnectionClosedError: {result}', exc_info=False)
+            if isinstance(result, websockets.exceptions.ConnectionClosedOK):
+                logging.exception(
+                    f'monitor> ConnectionClosedOK: {result}', exc_info=False)
 
 
 class ConsensusMonitorServer:
@@ -436,17 +414,17 @@ class ConsensusMonitorServer:
     - Port for incoming websockets connections
     """
 
-    def __init__(self, api_server: str, rpc_server, interval: str, port: int):
+    def __init__(self, api_server: str, rpc_server, port: int):
         self.port = port
         self.monitor = ConsensusMonitor(
-            api_server=api_server, rpc_server=rpc_server, interval_seconds=float(interval))
+            api_server=api_server, rpc_server=rpc_server)
 
     async def start_server(self):
         """
         Start listening for websockets connections and consensus monitoring
         """
         async with websockets.serve(self.handler, "", self.port):
-            await self.monitor.monitor()
+            await self.monitor.subscribe()
             await asyncio.Future()  # run forever
 
     async def handler(self, websocket):
@@ -472,10 +450,6 @@ if __name__ == "__main__":
                         help='the RPC server to connect to',
                         type=str,
                         required=True)
-    parser.add_argument('-i', '--interval',
-                        help='the number of seconds to wait between node updates',
-                        type=str,
-                        default='1')
     parser.add_argument('-p', '--port',
                         help="the port to listen on for websockets connections",
                         nargs='?',
@@ -488,6 +462,6 @@ if __name__ == "__main__":
     ms = ConsensusMonitorServer(
         api_server=args['api'],
         rpc_server=args['rpc'],
-        interval=args['interval'],
         port=args['port'])
+
     asyncio.run(ms.start_server())
