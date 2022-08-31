@@ -44,9 +44,9 @@ function setProgress(box, progress) {
         vote_passed = '_pass';
     }
 
-    for (let i=0; i< progress; ++i) {
+    for (let i = 0; i < progress; ++i) {
         bar = document.createElement('div');
-        bar.className = 'progress_bar'+vote_passed;
+        bar.className = 'progress_bar' + vote_passed;
         box.appendChild(bar)
     };
 
@@ -62,7 +62,6 @@ wso.onclose = function (evt) {
 
 wso.onmessage = async function (event) {
     let data = JSON.parse(await event.data);
-
     if (data.hasOwnProperty('monikers')) {
         populate_validators(data['monikers']);
     };
@@ -77,7 +76,7 @@ wso.onmessage = async function (event) {
     if (data.hasOwnProperty('pv_percentage')) {
         let pv_percentage = parseInt(data['pv_percentage']);
         prevotes_ratio_div.textContent = pv_percentage + '%';
-        setProgress(pv_bar_box, pv_percentage); 
+        setProgress(pv_bar_box, pv_percentage);
     };
     if (data.hasOwnProperty('pv_list') && data['pv_list'].length > 0) {
         let prevote_list = data['pv_list'];
