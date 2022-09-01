@@ -1,0 +1,12 @@
+[Unit]
+Description="Cosmos Consensus Monitor UI Server"
+
+[Service]
+User={USER}
+WorkingDirectory={USER_HOME}/cosmos-consensus-monitor/client
+ExecStart={USER_HOME}/cosmos-consensus-monitor/.env/bin/python -m http.server 80
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
