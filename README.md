@@ -1,4 +1,4 @@
-# 🎚 Cosmos Consensus Monitor
+# Cosmos Consensus Monitor
 
 A real-time monitoring tool for the Cosmos consensus status.
 
