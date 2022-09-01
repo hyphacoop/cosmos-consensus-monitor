@@ -48,13 +48,14 @@ class ConsensusMonitor:
     RPC_ENDPOINT_ABCI_INFO = '/abci_info'
     RPC_ENDPOINT_BLOCK = '/block'
     RPC_ENDPOINT_CONSENSUS = '/consensus_state'
-    WS_EVENT_VOTE = '{ "jsonrpc": "2.0", "method": "subscribe", \
-                    "params": ["tm.event=\'Vote\'"], "id": 1 }'
-    WS_EVENT_NEW_ROUND_STEP = '{ "jsonrpc": "2.0", "method": "subscribe", \
-                    "params": ["tm.event=\'NewRoundStep\'"], "id": 2 }'
-    WS_EVENT_VALIDATOR_SET_UPDATES = '{ "jsonrpc": "2.0", "method": "subscribe", \
-                    "params": ["tm.event=\'ValidatorSetUpdates\'"], "id": 3 }'
-
+    WS_EVENT_SUBSCRIPTIONS = [
+        '{ "jsonrpc": "2.0", "method": "subscribe", \
+            "params": ["tm.event=\'Vote\'"], "id": 1 }',
+        '{ "jsonrpc": "2.0", "method": "subscribe", \
+            "params": ["tm.event=\'NewRoundStep\'"], "id": 2 }',
+        '{ "jsonrpc": "2.0", "method": "subscribe", \
+            "params": ["tm.event=\'ValidatorSetUpdates\'"], "id": 3 }'
+    ]
     # The maximum number of websocket .send coroutines running at once
     # Larger number means more concurrent bandwidth usage,
     # also probably a bit more CPU usage?
@@ -365,8 +366,9 @@ class ConsensusMonitor:
             self.state['round_step'] = value['step']
             await self.update_state()
             if self.state['round_step'] == 'RoundStepNewHeight':
-                msg = json.dumps(
-                    {'height': value['height'], 'version': self.get_version()})
+                msg = json.dumps({'height': value['height']})
+                await self.broadcast(msg)
+                msg = json.dumps({'version': self.get_version()})
                 await self.broadcast(msg)
         elif new_event == 'ValidatorSetUpdates':
             logging.info('Validator set has been updated')
@@ -385,12 +387,9 @@ class ConsensusMonitor:
         ws_url = ws_url + '/websocket'
         async for websocket in websockets.connect(ws_url):
             try:
-                await websocket.send(self.WS_EVENT_VOTE)
-                await websocket.recv()
-                await websocket.send(self.WS_EVENT_NEW_ROUND_STEP)
-                await websocket.recv()
-                await websocket.send(self.WS_EVENT_VALIDATOR_SET_UPDATES)
-                await websocket.recv()
+                for sub in self.WS_EVENT_SUBSCRIPTIONS:
+                    await websocket.send(sub)
+                    await websocket.recv()
                 while True:
                     data = json.loads(await websocket.recv())['result']
                     if 'query' in data:
