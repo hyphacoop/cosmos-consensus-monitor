@@ -34,22 +34,30 @@ function populate_validators(monikers) {
 }
 
 function setProgress(box, progress) {
-    // Add the relevant number of bars to the progress box
-    while (box.firstChild) {
-        box.removeChild(box.firstChild);
-    }
-
-    let vote_passed = ''
-    if (progress >= 67) {
-        vote_passed = '_pass';
-    }
-
-    for (let i = 0; i < progress; ++i) {
-        bar = document.createElement('div');
-        bar.className = 'progress_bar' + vote_passed;
-        box.appendChild(bar)
+    if (box.childNodes.length == progress) {
+        return;
     };
 
+    // Add the relevant number of bars to the progress box
+    if (progress == 0) {
+        while (box.firstChild) {
+            box.removeChild(box.firstChild);
+        };
+    }
+    else {
+        for (let i = box.childNodes.length; i < progress; ++i) {
+            bar = document.createElement('div');
+            bar.className = 'progress_bar';
+            box.appendChild(bar)
+        };
+
+        if (progress >= 67) {
+            box.childNodes.forEach(val => {
+                val.classList.remove('progress_bar')
+                val.classList.add('progress_bar_pass');
+            });
+        }
+    };
 };
 
 wso.onopen = function (evt) {
