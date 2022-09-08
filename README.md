@@ -4,7 +4,7 @@ A real-time monitoring tool for the Cosmos consensus status.
 
 The monitor is made up of two parts:
 
-- A websockets server that queries a Cosmos node continuously.
+- A websockets server that provides updates triggered by Cosmos node events.
 - A web client that opens a websockets connection to the server.
 
 ## Setup
